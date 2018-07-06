@@ -18,6 +18,6 @@ group by table_schema ,data_type;
 --依照primary key的data type進行查詢
 select table_schema ,table_name ,data_type
 from information_schema.columns
-where table_schema = 'merchantconsole' 
- and data_type = 'varchar'
+where table_schema = 'db_name' 
+ and data_type = 'data_type'
  and column_key = 'PRI';
