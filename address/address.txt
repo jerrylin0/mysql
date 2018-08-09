@@ -1,0 +1,71 @@
+CREATE TABLE `country` (
+  `code` int(11) NOT NULL,
+  `name` varchar(10) DEFAULT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `provinces` (
+  `code` int(11) NOT NULL,
+  `name` varchar(20) DEFAULT NULL,
+  `countrycode` int(11) DEFAULT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `areas` (
+  `code` int(11) NOT NULL,
+  `name` varchar(20) DEFAULT NULL,
+  `citycode` int(11) DEFAULT NULL,
+  `provincecode` int(11) DEFAULT NULL,
+  PRIMARY KEY (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+------------------------------------------
+drop table if exists country;
+create table country(
+ id int primary key
+ ,name json);
+
+drop table if exists province2area;
+create table province2area(
+ id int primary key
+ ,name json);
+
+insert into province2area
+select l.provincecode,json_object('code' ,l.provincecode ,'name',p.name ,'city' ,l.list)
+from provinces p join(
+	select provincecode ,JSON_ARRAYAGG(list) as list
+	from(
+		select x.provincecode  ,JSON_MERGE_PRESERVE(x.city ,json_object('area' ,y.area)) as list
+		from (
+			select provincecode,code,json_object('code' ,code ,'name' ,name) as city 
+			from cities
+			) x
+		join( 
+			select citycode ,JSON_ARRAYAGG(area) as area
+			from (
+				select citycode,json_object('code' ,code ,'name' ,name) as area
+				from areas)x
+			group by citycode
+			) y
+		 on x.code = y.citycode
+		 ) z
+	group by z.provincecode
+	) l
+ on p.code = l.provincecode 
+;
+
+insert into country
+select co.code,json_object('code',co.code ,'name', co.name ,'province' ,y.province)
+from (
+	select countrycode ,JSON_ARRAYAGG(province) as province
+	from (
+		select countrycode,json_object('code' ,code ,'name' ,name) as province
+		from provinces)x
+	group by countrycode
+	) y join country co
+ on co.code = y.countrycode
+;
+
+
+
+
